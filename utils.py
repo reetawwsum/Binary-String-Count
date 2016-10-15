@@ -1,73 +1,103 @@
 from __future__ import print_function
 
+import os
 import numpy as np
 from random import shuffle
 from six.moves import cPickle as pickle
+
+class BinaryCount:
+	pass
+
+class Dataset():
+	'''Generate or load dataset'''
+	def __init__(self, num_unrollings, dataset_type):
+		self.num_unrollings = num_unrollings
+
+		file_name = 'data/' + dataset_type + '_' + str(num_unrollings) + '.pkl'
+
+		if os.path.isfile(file_name):
+			# Load the dataset
+			dataset = self.load(file_name)
+			self.data = dataset.data
+			self.target = dataset.target
+		else:
+			# Generate the dataset
+			dataset = self.generate()
+			train_dataset, test_dataset = self.split(dataset)
+			self.save(train_dataset, 'train_dataset' + '_' + str(num_unrollings) + '.pkl')
+			self.save(test_dataset, 'test_dataset' + '_' + str(num_unrollings) + '.pkl')
+
+			if dataset_type == 'train_dataset':
+				self.data = train_dataset.data
+				self.target = train_dataset.target
+			else:
+				self.data = test_dataset.data
+				self.target = test_dataset.target
+
+	def generate(self):
+		X = ['{0:b}'.format(i).zfill(self.num_unrollings) for i in xrange(2**self.num_unrollings)]
+		shuffle(X)
+		X = np.array([map(int, i) for i in X])
+		X = np.reshape(X, [len(X), self.num_unrollings, 1])
+
+		y = []
+
+		for i in X:
+			count = np.sum(i[:, 0])
+			buffer = np.zeros(self.num_unrollings + 1)
+			buffer[count] = 1
+			y.append(buffer)
+
+		dataset = BinaryCount()
+		dataset.X = X
+		dataset.y = np.array(y)
+		
+		return dataset
+
+	def save(self, dataset, file_name):
+		with open('data/' + file_name, 'wb') as f:
+			pickle.dump(dataset, f)
+
+	def load(self, file_name):
+		with open(file_name, 'rb') as f:
+			dataset = pickle.load(f)
+
+		return dataset
+
+	def split(self, dataset, train_size=10000):
+		X = dataset.X
+		y = dataset.y
+
+		train_dataset = BinaryCount()
+		train_dataset.data = X[:train_size]
+		train_dataset.target = y[:train_size]
+
+		test_dataset = BinaryCount()
+		test_dataset.data = X[train_size:]
+		test_dataset.target = y[train_size:]
+
+		return train_dataset, test_dataset
 
 class BatchGenerator():
 	'''Generate train batches'''
 	def __init__(self, batch_size, num_unrollings):
 		self.batch_size = batch_size
 		self.num_unrollings = num_unrollings # Sequence length
-		self.output_size = num_unrollings + 1
+		self.target_size = num_unrollings + 1
 
-class BinaryCount:
-	pass
+		dataset = Dataset(num_unrollings, 'train_dataset')
+		self.train_data = dataset.data
+		self.train_target = dataset.target
 
-def generate():
-	'''Generating binary string of length 20'''
-	X = ['{0:020b}'.format(i) for i in xrange(2**20)]
-	shuffle(X)
-	X = np.array([map(int, i) for i in X])
-	X = np.reshape(X, [len(X), 20, 1])
+		self.cursor = 0
 
-	y = []
+	def next(self):
+		data = self.train_data[self.cursor:self.cursor + self.batch_size]
+		target = self.train_target[self.cursor:self.cursor + self.batch_size]
+		self.cursor = (self.cursor + self.batch_size) % len(self.train_data)
 
-	for i in X:
-		count = np.sum(i[:, 0])
-		buffer = np.zeros(21)
-		buffer[count] = 1
-		y.append(buffer)
-
-	dataset = BinaryCount()
-	dataset.X = X
-	dataset.y = y
-	
-	return dataset
-
-def save(dataset, file_name):
-	with open('data/' + file_name, 'wb') as f:
-		pickle.dump(dataset, f)
-
-def load(file_name):
-	with open('data/' + file_name, 'rb') as f:
-		dataset = pickle.load(f)
-
-	return dataset
-
-def split(dataset, train_size=10000):
-	X = dataset.X
-	y = dataset.y
-
-	train_dataset = BinaryCount()
-	train_dataset.input = X[:train_size]
-	train_dataset.output = y[:train_size]
-
-	test_dataset = BinaryCount()
-	test_dataset.input = X[train_size:]
-	test_dataset.output = y[train_size:]
-
-	return train_dataset, test_dataset
+		return data, target
 
 if __name__ == '__main__':
-	dataset = generate()
-	train_dataset, test_dataset = split(dataset)
-
-	save(train_dataset, 'train_dataset.pkl')
-	save(test_dataset, 'test_dataset.pkl')
-
-	train_dataset = load('train_dataset.pkl')
-	train_input = train_dataset.input
-	train_output = train_dataset.output
-
-	print(train_input[1], train_output[1])
+	train_batches = BatchGenerator(1000, 20)
+	train_data, train_target = train_batches.next()
