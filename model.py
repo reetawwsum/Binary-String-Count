@@ -93,15 +93,26 @@ class Model:
 					print('Loss at Epoch %d: %f' % (epoch, l))
 
 
-	def predict(self):
-		pass
+	def predict(self, test_data):
+		with tf.Session(graph=self.graph) as self.sess:
+			self.load(3110)
+			print('Model Restored')
+
+			for data in test_data:
+				feed_dict = {self.data: np.reshape(data, [1, self.num_unrollings, 1])}
+
+				prediction = self.sess.run(self.prediction, feed_dict=feed_dict)
+
+				print('Binary string: %s, Count: %d' % (str(np.reshape(data, [-1])), np.argmax(prediction)))
 
 	def save(self, global_step):
 		self.saver.save(self.sess, 'checkpoint/lstm-rnn', global_step=global_step)
 
-	def load(self):
-		pass
+	def load(self, global_step):
+		self.saver.restore(self.sess, 'checkpoint/lstm-rnn-' + str(global_step))
 
 if __name__ == '__main__':
 	lstm_model = Model(24, 20, 1000, 5000)
 	lstm_model.train()
+	a = np.array([[[1],[0],[0],[1],[1],[0],[1],[1],[1],[0],[1],[0],[0],[1],[1],[0],[1],[1],[1],[0]]])
+	lstm_model.predict(a)
