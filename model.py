@@ -7,20 +7,21 @@ from utils import *
 
 class Model:
 	'''Two layer LSTM network'''
-	def __init__(self, num_units, num_unrollings, batch_size):
+	def __init__(self, num_units, num_unrollings, batch_size, epochs):
 		self.num_units = num_units
 		self.num_unrollings = num_unrollings # Sequence length
 		self.batch_size = batch_size
+		self.epochs = epochs
 		self.output_size = num_unrollings + 1
 
 		self.build_model()
 
-	def inference(self, data):
+	def inference(self):
 		# Creating LSTM layer
 		cell = tf.nn.rnn_cell.LSTMCell(self.num_units)
 
 		# Creating Unrolled LSTM
-		hidden, _ = tf.nn.dynamic_rnn(cell, data, dtype=tf.float32)
+		hidden, _ = tf.nn.dynamic_rnn(cell, self.data, dtype=tf.float32)
 
 		# Calculating hidden output at last time step
 		hidden = tf.transpose(hidden, [1, 0, 2])
@@ -33,22 +34,22 @@ class Model:
 		# Calculating softmax
 		prediction = tf.nn.softmax(tf.matmul(last, weight) + bias)
 
-		return prediction
+		self.prediction = prediction
 
-	def loss_op(self, prediction, target):
-		cross_entropy = -tf.reduce_sum(target * tf.log(prediction))
+	def loss_op(self):
+		cross_entropy = -tf.reduce_sum(self.target * tf.log(self.prediction))
 
-		return cross_entropy
+		self.loss = cross_entropy
 
-	def train_op(self, loss):
+	def train_op(self):
 		optimizer = tf.train.AdamOptimizer()
 
-		return optimizer.minimize(loss)
+		self.optimizer = optimizer.minimize(self.loss)
 
 	def create_saver(self):
 		saver = tf.train.Saver()
 
-		return saver
+		self.saver = saver
 
 	def accuracy(self):
 		pass
@@ -58,19 +59,19 @@ class Model:
 
 		with self.graph.as_default():
 			# Creating placeholder for data and target
-			data, target = placeholder_input(self.num_unrollings, self.output_size)
+			self.data, self.target = placeholder_input(self.num_unrollings, self.output_size)
 
 			# Builds the graph that computes inference
-			prediction = self.inference(data)
+			self.inference()
 
 			# Adding loss op to the graph
-			loss = self.loss_op(prediction, target)
+			self.loss_op()
 
 			# Adding train op to the graph
-			optimizer = self.train_op(loss)
+			self.train_op()
 
 			# Creating saver
-			saver = self.create_saver()
+			self.create_saver()
 
 	def train(self):
 		with tf.Session(graph=self.graph) as self.sess:
@@ -80,15 +81,27 @@ class Model:
 
 			train_batches = BatchGenerator(self.batch_size, self.num_unrollings)
 
+			for step in xrange(self.epochs * (10000/self.batch_size) + 1):
+				train_data, train_target = train_batches.next()
+				feed_dict = {self.data: train_data, self.target: train_target}
+
+				_, l = self.sess.run([self.optimizer, self.loss], feed_dict=feed_dict)
+
+				if not step % 50:
+					epoch = step / 10
+					self.save(epoch)
+					print('Loss at Epoch %d: %f' % (epoch, l))
+
+
 	def predict(self):
 		pass
 
-	def save(self):
-		pass
+	def save(self, global_step):
+		self.saver.save(self.sess, 'checkpoint/lstm-rnn', global_step=global_step)
 
 	def load(self):
 		pass
 
 if __name__ == '__main__':
-	lstm_model = Model(24, 20, 1000)
+	lstm_model = Model(24, 20, 1000, 5000)
 	lstm_model.train()
