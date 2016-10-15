@@ -4,6 +4,13 @@ import numpy as np
 from random import shuffle
 from six.moves import cPickle as pickle
 
+class BatchGenerator():
+	'''Generate train batches'''
+	def __init__(self, batch_size, num_unrollings):
+		self.batch_size = batch_size
+		self.num_unrollings = num_unrollings # Sequence length
+		self.output_size = num_unrollings + 1
+
 class BinaryCount:
 	pass
 
