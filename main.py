@@ -1,7 +1,5 @@
 from __future__ import print_function
 
-import os
-
 from model import *
 
 flags = tf.app.flags
@@ -19,12 +17,12 @@ flags.DEFINE_integer('restore_model', 3110, 'Model to restore to calculate accur
 FLAGS = flags.FLAGS
 
 def main(_):
-	model = Model(FLAGS.num_units, FLAGS.num_unrollings, FLAGS.batch_size, FLAGS.epochs)
+	model = Model(FLAGS)
 
 	if FLAGS.train:
-		model.train(FLAGS)
+		model.train()
 	else:
-		print(model.accuracy(FLAGS))
+		print(model.accuracy())
 
 if __name__ == '__main__':
 	tf.app.run()

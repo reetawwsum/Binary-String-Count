@@ -7,12 +7,17 @@ from utils import *
 
 class Model:
 	'''Two layer LSTM network'''
-	def __init__(self, num_units, num_unrollings, batch_size, epochs):
-		self.num_units = num_units
-		self.num_unrollings = num_unrollings
-		self.batch_size = batch_size
-		self.epochs = epochs
-		self.output_size = num_unrollings + 1
+	def __init__(self, config):
+		self.config = config
+		self.num_units = config.num_units
+		self.num_unrollings = config.num_unrollings
+		self.batch_size = config.batch_size
+		self.epochs = config.epochs
+		self.output_size = config.num_unrollings + 1
+		self.accuracy_dataset_type = config.accuracy_dataset_type
+		self.checkpoint_dir = config.checkpoint_dir
+		self.model_name = config.model_name
+		self.restore_model = config.restore_model
 
 		self.build_model()
 
@@ -51,12 +56,12 @@ class Model:
 
 		self.saver = saver
 
-	def accuracy(self, config):
-		dataset = Dataset(self.num_unrollings, config.accuracy_dataset_type, config)
+	def accuracy(self):
+		dataset = Dataset(self.config, self.accuracy_dataset_type)
 		test_data = dataset.data
 		test_target = dataset.target
 
-		test_predictions = self.predict(test_data, config)
+		test_predictions = self.predict(test_data)
 
 		correct_prediction = np.equal(test_predictions, np.argmax(test_target, 1))
 
@@ -81,13 +86,13 @@ class Model:
 			# Creating saver
 			self.create_saver()
 
-	def train(self, config):
+	def train(self):
 		with tf.Session(graph=self.graph) as self.sess:
 			init = tf.initialize_all_variables()
 			self.sess.run(init)
 			print('Graph Initialized')
 
-			train_batches = BatchGenerator(self.batch_size, self.num_unrollings, config)
+			train_batches = BatchGenerator(self.config)
 
 			for step in xrange(self.epochs * (10000/self.batch_size) + 1):
 				train_data, train_target = train_batches.next()
@@ -97,13 +102,13 @@ class Model:
 
 				if not step % 50:
 					epoch = step / 10
-					self.save(epoch, config)
+					self.save(epoch)
 					print('Loss at Epoch %d: %f' % (epoch, l))
 
 
-	def predict(self, test_data, config):
+	def predict(self, test_data):
 		with tf.Session(graph=self.graph) as self.sess:
-			self.load(config)
+			self.load()
 			print('Model Restored')
 
 			predictions = []
@@ -117,8 +122,8 @@ class Model:
 
 			return predictions
 
-	def save(self, global_step, config):
-		self.saver.save(self.sess, os.path.join(config.checkpoint_dir, config.model_name), global_step=global_step)
+	def save(self, global_step):
+		self.saver.save(self.sess, os.path.join(self.checkpoint_dir, self.model_name), global_step=global_step)
 
-	def load(self, config):
-		self.saver.restore(self.sess, os.path.join(config.checkpoint_dir, config.model_name + '-' + str(config.restore_model)))
+	def load(self):
+		self.saver.restore(self.sess, os.path.join(self.checkpoint_dir, self.model_name + '-' + str(self.restore_model)))
