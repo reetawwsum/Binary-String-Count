@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import tensorflow as tf
 
 def placeholder_input(num_unrollings, output_size):
