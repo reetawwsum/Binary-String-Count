@@ -18,7 +18,7 @@ class Dataset():
 		self.load_dataset()
 
 	def load_dataset(self):
-		file_name = os.path.join(self.dataset_dir, self.dataset_type + '_' + str(self.num_unrollings) + '.pkl')
+		file_name = os.path.join(self.dataset_dir, self.dataset_type + '_' + str(self.num_unrollings) + '_' + str(self.train_size) + '.pkl')
 
 		if os.path.isfile(file_name):
 			# Load the dataset
@@ -29,8 +29,8 @@ class Dataset():
 			# Generate the dataset
 			dataset = self.generate()
 			train_dataset, test_dataset = self.split(dataset)
-			self.save(train_dataset, 'train_dataset' + '_' + str(self.num_unrollings) + '.pkl')
-			self.save(test_dataset, 'test_dataset' + '_' + str(self.num_unrollings) + '.pkl')
+			self.save(train_dataset, 'train_dataset' + '_' + str(self.num_unrollings) + '_' + str(self.train_size) + '.pkl')
+			self.save(test_dataset, 'test_dataset' + '_' + str(self.num_unrollings) + '_' + str(self.train_size) + '.pkl')
 
 			if self.dataset_type == 'train_dataset':
 				self.data = train_dataset.data

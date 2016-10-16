@@ -128,4 +128,8 @@ class Model:
 		self.saver.save(self.sess, os.path.join(self.checkpoint_dir, self.model_name), global_step=global_step)
 
 	def load(self):
-		self.saver.restore(self.sess, os.path.join(self.checkpoint_dir, self.model_name + '-' + str(self.restore_model)))
+		try:
+			self.saver.restore(self.sess, os.path.join(self.checkpoint_dir, self.model_name + '-' + str(self.restore_model)))
+		except ValueError:
+			print('Restore model does not exist!')
+			exit()
