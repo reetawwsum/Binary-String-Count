@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import os
 import numpy as np
 from random import shuffle
@@ -12,8 +10,12 @@ class Dataset():
 	'''Generate or load dataset'''
 	def __init__(self, num_unrollings, dataset_type):
 		self.num_unrollings = num_unrollings
+		self.dataset_type = dataset_type
 
-		file_name = 'data/' + dataset_type + '_' + str(num_unrollings) + '.pkl'
+		self.load_dataset()
+
+	def load_dataset(self):
+		file_name = 'data/' + self.dataset_type + '_' + str(self.num_unrollings) + '.pkl'
 
 		if os.path.isfile(file_name):
 			# Load the dataset
@@ -24,10 +26,10 @@ class Dataset():
 			# Generate the dataset
 			dataset = self.generate()
 			train_dataset, test_dataset = self.split(dataset)
-			self.save(train_dataset, 'train_dataset' + '_' + str(num_unrollings) + '.pkl')
-			self.save(test_dataset, 'test_dataset' + '_' + str(num_unrollings) + '.pkl')
+			self.save(train_dataset, 'train_dataset' + '_' + str(self.num_unrollings) + '.pkl')
+			self.save(test_dataset, 'test_dataset' + '_' + str(self.num_unrollings) + '.pkl')
 
-			if dataset_type == 'train_dataset':
+			if self.dataset_type == 'train_dataset':
 				self.data = train_dataset.data
 				self.target = train_dataset.target
 			else:
@@ -84,12 +86,14 @@ class BatchGenerator():
 		self.batch_size = batch_size
 		self.num_unrollings = num_unrollings # Sequence length
 		self.target_size = num_unrollings + 1
+		self.cursor = 0
 
-		dataset = Dataset(num_unrollings, 'train_dataset')
+		self.load_dataset()
+
+	def load_dataset(self):
+		dataset = Dataset(self.num_unrollings, 'train_dataset')
 		self.train_data = dataset.data
 		self.train_target = dataset.target
-
-		self.cursor = 0
 
 	def next(self):
 		data = self.train_data[self.cursor:self.cursor + self.batch_size]
@@ -97,7 +101,3 @@ class BatchGenerator():
 		self.cursor = (self.cursor + self.batch_size) % len(self.train_data)
 
 		return data, target
-
-if __name__ == '__main__':
-	train_batches = BatchGenerator(1000, 20)
-	train_data, train_target = train_batches.next()
