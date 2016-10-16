@@ -16,6 +16,7 @@ flags.DEFINE_string('batch_dataset_type', 'train_dataset', 'Dataset used for gen
 flags.DEFINE_string('accuracy_dataset_type', 'test_dataset', 'Dataset used for generating accuracy')
 flags.DEFINE_string('model_name', 'rnn-lstm', 'Name of the model')
 flags.DEFINE_integer('restore_model', 3110, 'Model to restore to calculate accuracy')
+flags.DEFINE_boolean('random_prediction', True, 'Show random prediction')
 FLAGS = flags.FLAGS
 
 def main(_):
@@ -32,7 +33,14 @@ def main(_):
 	if FLAGS.train:
 		model.train()
 	else:
-		print(model.accuracy())
+		vals = model.accuracy()
+
+		if FLAGS.random_prediction:
+			print('Model accuracy: %.2f' % vals[0])
+			print('Random binary string: %s' % str(vals[1]))
+			print('Count prediction: %d' % vals[2])
+		else:
+			print('Model accuracy: %.2f' % vals[0])
 
 if __name__ == '__main__':
 	tf.app.run()

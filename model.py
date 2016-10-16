@@ -1,5 +1,7 @@
 from __future__ import print_function
 
+import random
+import numpy as np
 import tensorflow as tf
 
 from ops import *
@@ -20,6 +22,7 @@ class Model:
 		self.restore_model = config.restore_model
 		self.train_size = config.train_size
 		self.checkpoint_step = config.checkpoint_step
+		self.random_prediction = config.random_prediction
 
 		self.build_model()
 
@@ -67,7 +70,16 @@ class Model:
 
 		correct_prediction = np.equal(test_predictions, np.argmax(test_target, 1))
 
-		return np.mean(correct_prediction)
+		if self.random_prediction:
+			index = random.randint(0, len(test_data))
+			random_data = test_data[index]
+			random_prediction = test_predictions[index]
+
+			vals = [np.mean(correct_prediction), np.reshape(random_data, [-1]), random_prediction]
+		else:
+			vals = [np.mean(correct_prediction)]
+
+		return vals
 
 	def build_model(self):
 		self.graph = tf.Graph()
