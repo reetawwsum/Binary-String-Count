@@ -9,7 +9,7 @@ class Model:
 	'''Two layer LSTM network'''
 	def __init__(self, num_units, num_unrollings, batch_size, epochs):
 		self.num_units = num_units
-		self.num_unrollings = num_unrollings # Sequence length
+		self.num_unrollings = num_unrollings
 		self.batch_size = batch_size
 		self.epochs = epochs
 		self.output_size = num_unrollings + 1
@@ -51,12 +51,12 @@ class Model:
 
 		self.saver = saver
 
-	def accuracy(self):
-		dataset = Dataset(self.num_unrollings, 'test_dataset')
+	def accuracy(self, config):
+		dataset = Dataset(self.num_unrollings, config.accuracy_dataset_type, config)
 		test_data = dataset.data
 		test_target = dataset.target
 
-		test_predictions = self.predict(test_data)
+		test_predictions = self.predict(test_data, config)
 
 		correct_prediction = np.equal(test_predictions, np.argmax(test_target, 1))
 
@@ -81,13 +81,13 @@ class Model:
 			# Creating saver
 			self.create_saver()
 
-	def train(self):
+	def train(self, config):
 		with tf.Session(graph=self.graph) as self.sess:
 			init = tf.initialize_all_variables()
 			self.sess.run(init)
 			print('Graph Initialized')
 
-			train_batches = BatchGenerator(self.batch_size, self.num_unrollings)
+			train_batches = BatchGenerator(self.batch_size, self.num_unrollings, config)
 
 			for step in xrange(self.epochs * (10000/self.batch_size) + 1):
 				train_data, train_target = train_batches.next()
@@ -97,13 +97,13 @@ class Model:
 
 				if not step % 50:
 					epoch = step / 10
-					self.save(epoch)
+					self.save(epoch, config)
 					print('Loss at Epoch %d: %f' % (epoch, l))
 
 
-	def predict(self, test_data):
+	def predict(self, test_data, config):
 		with tf.Session(graph=self.graph) as self.sess:
-			self.load(3110)
+			self.load(config)
 			print('Model Restored')
 
 			predictions = []
@@ -117,8 +117,8 @@ class Model:
 
 			return predictions
 
-	def save(self, global_step):
-		self.saver.save(self.sess, 'checkpoint/lstm-rnn', global_step=global_step)
+	def save(self, global_step, config):
+		self.saver.save(self.sess, os.path.join(config.checkpoint_dir, config.model_name), global_step=global_step)
 
-	def load(self, global_step):
-		self.saver.restore(self.sess, 'checkpoint/lstm-rnn-' + str(global_step))
+	def load(self, config):
+		self.saver.restore(self.sess, os.path.join(config.checkpoint_dir, config.model_name + '-' + str(config.restore_model)))

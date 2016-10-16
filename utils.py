@@ -8,14 +8,15 @@ class BinaryCount:
 
 class Dataset():
 	'''Generate or load dataset'''
-	def __init__(self, num_unrollings, dataset_type):
+	def __init__(self, num_unrollings, dataset_type, config):
 		self.num_unrollings = num_unrollings
 		self.dataset_type = dataset_type
+		self.config = config
 
 		self.load_dataset()
 
 	def load_dataset(self):
-		file_name = 'data/' + self.dataset_type + '_' + str(self.num_unrollings) + '.pkl'
+		file_name = os.path.join(self.config.dataset_dir, self.dataset_type + '_' + str(self.num_unrollings) + '.pkl')
 
 		if os.path.isfile(file_name):
 			# Load the dataset
@@ -57,7 +58,7 @@ class Dataset():
 		return dataset
 
 	def save(self, dataset, file_name):
-		with open('data/' + file_name, 'wb') as f:
+		with open(os.path.join(self.config.dataset_dir, file_name), 'wb') as f:
 			pickle.dump(dataset, f)
 
 	def load(self, file_name):
@@ -82,16 +83,17 @@ class Dataset():
 
 class BatchGenerator():
 	'''Generate train batches'''
-	def __init__(self, batch_size, num_unrollings):
+	def __init__(self, batch_size, num_unrollings, config):
 		self.batch_size = batch_size
-		self.num_unrollings = num_unrollings # Sequence length
+		self.num_unrollings = num_unrollings
+		self.config = config
 		self.target_size = num_unrollings + 1
 		self.cursor = 0
 
 		self.load_dataset()
 
 	def load_dataset(self):
-		dataset = Dataset(self.num_unrollings, 'train_dataset')
+		dataset = Dataset(self.num_unrollings, self.config.batch_dataset_type, self.config)
 		self.train_data = dataset.data
 		self.train_target = dataset.target
 
