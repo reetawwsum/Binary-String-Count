@@ -52,7 +52,15 @@ class Model:
 		self.saver = saver
 
 	def accuracy(self):
-		pass
+		dataset = Dataset(self.num_unrollings, 'test_dataset')
+		test_data = dataset.data
+		test_target = dataset.target
+
+		test_predictions = self.predict(test_data)
+
+		correct_prediction = np.equal(test_predictions, np.argmax(test_target, 1))
+
+		return np.mean(correct_prediction)
 
 	def build_model(self):
 		self.graph = tf.Graph()
@@ -98,21 +106,19 @@ class Model:
 			self.load(3110)
 			print('Model Restored')
 
+			predictions = []
+
 			for data in test_data:
 				feed_dict = {self.data: np.reshape(data, [1, self.num_unrollings, 1])}
 
 				prediction = self.sess.run(self.prediction, feed_dict=feed_dict)
 
-				print('Binary string: %s, Count: %d' % (str(np.reshape(data, [-1])), np.argmax(prediction)))
+				predictions.append(np.argmax(prediction))
+
+			return predictions
 
 	def save(self, global_step):
 		self.saver.save(self.sess, 'checkpoint/lstm-rnn', global_step=global_step)
 
 	def load(self, global_step):
 		self.saver.restore(self.sess, 'checkpoint/lstm-rnn-' + str(global_step))
-
-if __name__ == '__main__':
-	lstm_model = Model(24, 20, 1000, 5000)
-	lstm_model.train()
-	a = np.array([[[1],[0],[0],[1],[1],[0],[1],[1],[1],[0],[1],[0],[0],[1],[1],[0],[1],[1],[1],[0]]])
-	lstm_model.predict(a)
