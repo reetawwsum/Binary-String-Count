@@ -18,6 +18,8 @@ class Model:
 		self.checkpoint_dir = config.checkpoint_dir
 		self.model_name = config.model_name
 		self.restore_model = config.restore_model
+		self.train_size = config.train_size
+		self.checkpoint_step = config.checkpoint_step
 
 		self.build_model()
 
@@ -94,14 +96,14 @@ class Model:
 
 			train_batches = BatchGenerator(self.config)
 
-			for step in xrange(self.epochs * (10000/self.batch_size) + 1):
+			for step in xrange(self.epochs * (self.train_size/self.batch_size) + 1):
 				train_data, train_target = train_batches.next()
 				feed_dict = {self.data: train_data, self.target: train_target}
 
 				_, l = self.sess.run([self.optimizer, self.loss], feed_dict=feed_dict)
 
-				if not step % 50:
-					epoch = step / 10
+				if not step % self.checkpoint_step:
+					epoch = step / (self.train_size/self.batch_size)
 					self.save(epoch)
 					print('Loss at Epoch %d: %f' % (epoch, l))
 

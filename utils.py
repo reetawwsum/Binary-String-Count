@@ -13,6 +13,7 @@ class Dataset():
 		self.num_unrollings = config.num_unrollings
 		self.dataset_type = dataset_type
 		self.dataset_dir = config.dataset_dir
+		self.train_size = config.train_size
 
 		self.load_dataset()
 
@@ -68,17 +69,17 @@ class Dataset():
 
 		return dataset
 
-	def split(self, dataset, train_size=10000):
+	def split(self, dataset):
 		X = dataset.X
 		y = dataset.y
 
 		train_dataset = BinaryCount()
-		train_dataset.data = X[:train_size]
-		train_dataset.target = y[:train_size]
+		train_dataset.data = X[:self.train_size]
+		train_dataset.target = y[:self.train_size]
 
 		test_dataset = BinaryCount()
-		test_dataset.data = X[train_size:]
-		test_dataset.target = y[train_size:]
+		test_dataset.data = X[self.train_size:]
+		test_dataset.target = y[self.train_size:]
 
 		return train_dataset, test_dataset
 
