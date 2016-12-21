@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import sys
 import random
 import numpy as np
 import tensorflow as tf
@@ -105,6 +106,7 @@ class Model:
 			init = tf.initialize_all_variables()
 			self.sess.run(init)
 			print('Graph Initialized')
+			sys.stdout.flush()
 
 			train_batches = BatchGenerator(self.config)
 
@@ -118,12 +120,14 @@ class Model:
 					epoch = step / (self.train_size/self.batch_size)
 					self.save(epoch)
 					print('Loss at Epoch %d: %f' % (epoch, l))
+					sys.stdout.flush()
 
 
 	def predict(self, test_data):
 		with tf.Session(graph=self.graph) as self.sess:
 			self.load()
 			print('Model Restored')
+			sys.stdout.flush()
 
 			predictions = []
 
